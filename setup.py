@@ -9,7 +9,7 @@ with open(os.path.join(os.path.dirname(__file__), 'README.md'), encoding="utf-8"
 os.chdir(os.path.normpath(os.path.join(os.path.abspath(__file__), os.pardir)))
 
 setup(
-    name='forex',
+    name='forexcom',
     version='1.0.0',
     packages=find_packages(),
     include_package_data=True,
@@ -17,7 +17,7 @@ setup(
     description='python SDK for Forex.com',
     long_description=README,
     long_description_content_type='text/markdown',
-    url='https://github.com/ali-zahedi/forex',
+    url='https://github.com/ali-zahedi/forexcom',
     author='Ali Zahedigol',
     author_email='alizahedigol@gmail.com',
     classifiers=[

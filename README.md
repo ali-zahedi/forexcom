@@ -18,7 +18,7 @@ This project is to help you use [Forex.com](https://forex.com) [docs gain capita
 * Use the following command to install using pip:
 
 ```bash
-pip install forex
+pip install forexcom
 ```
 
 **OR** 
@@ -38,7 +38,7 @@ For better understanding, please read the:
 
 ## API Access
 
-Before working with Forex.com’s API, you need to get your own **AppKey**. you must contact [Forex.com](forex.com) service team to connect their REST API with your standard account or email to [support.en@forex.com](mailto:support.en@forex.com). It's usually take 3 working days.
+Before working with Forex.com’s API, you need to get your own **AppKey**. you must contact [Forex.com](forexcom) service team to connect their REST API with your standard account or email to [support.en@forex.com](mailto:support.en@forex.com). It's usually take 3 working days.
 
 ## Usage
 

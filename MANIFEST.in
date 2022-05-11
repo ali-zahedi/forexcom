@@ -1,4 +1,4 @@
 include LICENSE.md
 include README.md
-recursive-include forex *
+recursive-include forexcom *
 recursive-include docs *
