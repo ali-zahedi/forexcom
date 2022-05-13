@@ -41,7 +41,7 @@ OK_CMD = "OK"
 log = logging.getLogger()
 
 
-class Subscription(object):
+class StreamerSubscription(object):
     """Represents a Subscription to be submitted to a Lightstreamer Server."""
 
     def __init__(self, mode, items, fields, adapter=""):
@@ -85,15 +85,14 @@ class Subscription(object):
         curr_item = self._items_map.get(item_pos, {})
         # Update the map with new values, merging with the
         # previous ones if any.
-        self._items_map[item_pos] = dict([
-            (k, self._decode(v, curr_item.get(k))) for k, v
-            in list(undecoded_item.items())
-        ])
+        self._items_map[item_pos] = dict(
+            [(k, self._decode(v, curr_item.get(k))) for k, v in list(undecoded_item.items())],
+        )
         # Make an item info as a new event to be passed to listeners
         item_info = {
             'pos': item_pos,
             'name': self.item_names[item_pos - 1],
-            'values': self._items_map[item_pos]
+            'values': self._items_map[item_pos],
         }
 
         # Update each registered listener with new event
@@ -101,7 +100,7 @@ class Subscription(object):
             on_item_update(item_info)
 
 
-class LSClient(object):
+class StreamerClient(object):
     """Manages the communication with Lightstreamer Server"""
 
     def __init__(self, base_url, adapter_set="", user="", password=""):
@@ -149,11 +148,12 @@ class LSClient(object):
             self._base_url,
             CONNECTION_URL_PATH,
             {
-             "LS_op2": 'create',
-             "LS_cid": 'mgQkwtwdysogQz2BJ4Ji kOj2Bg',
-             "LS_adapter_set": self._adapter_set,
-             "LS_user": self._user,
-             "LS_password": self._password}
+                "LS_op2": 'create',
+                "LS_cid": 'mgQkwtwdysogQz2BJ4Ji kOj2Bg',
+                "LS_adapter_set": self._adapter_set,
+                "LS_user": self._user,
+                "LS_password": self._password,
+            },
         )
         stream_line = self._read_from_stream()
         self._handle_stream(stream_line)
@@ -164,11 +164,7 @@ class LSClient(object):
         """
         log.debug("Binding to <%s>", self._control_url.geturl())
         self._stream_connection = self._call(
-            self._control_url,
-            BIND_URL_PATH,
-            {
-             "LS_session": self._session["SessionId"]
-             }
+            self._control_url, BIND_URL_PATH, {"LS_session": self._session["SessionId"]}
         )
 
         self._bind_counter += 1
@@ -190,8 +186,7 @@ class LSClient(object):
             # Start a new thread to handle real time updates sent
             # by Lightstreamer Server on the stream connection.
             self._stream_connection_thread = threading.Thread(
-                name="StreamThread-{0}".format(self._bind_counter),
-                target=self._receive
+                name="StreamThread-{0}".format(self._bind_counter), target=self._receive
             )
             self._stream_connection_thread.setDaemon(True)
             self._stream_connection_thread.start()
@@ -217,7 +212,7 @@ class LSClient(object):
         """
         if self._stream_connection is not None:
             log.debug("Closing session to <%s>", self._base_url.geturl())
-            server_response = self._control({"LS_op": OP_DESTROY})
+            _ = self._control({"LS_op": OP_DESTROY})
             # There is no need to explicitly close the connection, since it is
             # handled by thread completion.
             self._join()
@@ -226,21 +221,23 @@ class LSClient(object):
             log.warning("No connection to Lightstreamer")
 
     def subscribe(self, subscription):
-        """"Perform a subscription request to Lightstreamer Server."""
+        """ "Perform a subscription request to Lightstreamer Server."""
         # Register the Subscription with a new subscription key
         self._current_subscription_key += 1
         self._subscriptions[self._current_subscription_key] = subscription
 
         # Send the control request to perform the subscription
         log.debug("Making a new subscription request")
-        server_response = self._control({
-            "LS_table": self._current_subscription_key,
-            "LS_op": OP_ADD,
-            "LS_data_adapter": subscription.adapter,
-            "LS_mode": subscription.mode,
-            "LS_schema": " ".join(subscription.field_names),
-            "LS_id": " ".join(subscription.item_names),
-        })
+        server_response = self._control(
+            {
+                "LS_table": self._current_subscription_key,
+                "LS_op": OP_ADD,
+                "LS_data_adapter": subscription.adapter,
+                "LS_mode": subscription.mode,
+                "LS_schema": " ".join(subscription.field_names),
+                "LS_id": " ".join(subscription.item_names),
+            }
+        )
         if server_response == OK_CMD:
             log.info("Successfully subscribed ")
         else:
@@ -253,10 +250,7 @@ class LSClient(object):
         """
         log.debug("Making an unsubscription request")
         if subcription_key in self._subscriptions:
-            server_response = self._control({
-                "LS_Table": subcription_key,
-                "LS_op": OP_DELETE
-            })
+            server_response = self._control({"LS_Table": subcription_key, "LS_op": OP_DELETE})
 
             if server_response == OK_CMD:
                 del self._subscriptions[subcription_key]
@@ -333,8 +327,7 @@ class LSClient(object):
                 self._forward_update_message(message)
 
         if not rebind:
-            log.debug("No rebind to <%s>, clearing internal session data",
-                      self._base_url.geturl())
+            log.debug("No rebind to <%s>, clearing internal session data", self._base_url.geturl())
             # Clear internal data structures for session
             # and subscriptions management.
             self._stream_connection = None
@@ -344,4 +337,3 @@ class LSClient(object):
         else:
             log.debug("Binding to this active session")
             self.bind()
-

@@ -1,10 +1,9 @@
 import json
 import logging
 import ssl
-import urllib
-from urllib.error import URLError, HTTPError
-from urllib.parse import urlencode, urljoin
-from urllib.request import urlopen as _urlopen
+from urllib.error import HTTPError, URLError
+from urllib.parse import urlencode
+from urllib.request import Request, urlopen
 
 import certifi
 
@@ -22,12 +21,12 @@ def _iteritems(d):
 def encode_params(params):
     """Encode the parameter for HTTP submissions, but
     only for non empty values..."""
-    return _url_encode(
-        dict([(k, v) for (k, v) in _iteritems(params) if v])
-    )
+    return _url_encode(dict([(k, v) for (k, v) in _iteritems(params) if v]))
 
 
-def send_request(method, base_url, path, params=None, json_format=False, headers=None, http_proxy=None, https_proxy=None):
+def send_request(
+    method, base_url, path, params=None, json_format=False, headers=None, http_proxy=None, https_proxy=None
+):
     """Open a network connection and performs HTTP with provided params."""
     if method not in ["GET", "POST"]:
         raise ValueError(f"Unknown method <{method}>")
@@ -46,7 +45,7 @@ def send_request(method, base_url, path, params=None, json_format=False, headers
     if method == "GET" and params:
         url += "?" + params.decode("utf-8")
 
-    req = urllib.request.Request(url)
+    req = Request(url)
     if http_proxy:
         req.set_proxy(http_proxy, 'http')
     if https_proxy:
@@ -65,7 +64,7 @@ def send_request(method, base_url, path, params=None, json_format=False, headers
 
     log.debug("Making a request to <%s> with params <%s>", url, kwargs.get('data', params))
     try:
-        response = urllib.request.urlopen(**kwargs)
+        response = urlopen(**kwargs)
     except HTTPError as e:
         log.debug('The server couldn\'t fulfill the request. <%s>', e.code)
         res_body = e.read()
@@ -76,7 +75,3 @@ def send_request(method, base_url, path, params=None, json_format=False, headers
         res_body = response.read()
         return json.loads(res_body.decode("utf-8")) if json_format else res_body
     return {} if json_format else ''
-
-
-
-
