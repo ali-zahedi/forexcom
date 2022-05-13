@@ -42,6 +42,8 @@ Before working with Forex.com’s API, you need to get your own **AppKey**. you 
 
 ## Usage
 
+Initialize connection: 
+
 ```python
 import logging
 import sys
@@ -57,14 +59,71 @@ app_key = '<APP_KEY>'
 
 r = RestClient(username=username, password=password, app_key=app_key)
 r.connect()
+```
 
-res = r.get_prices('EUR/USD', count=100)
+### Get prices:
+
+Maximum number of items: **4000**
+
+
+* Get 100 most recent trades:
+
+```python
+
+res = r.get_prices('EUR/USD', count=100, price_type='mid') # price_type = [ask, bid, mid]
 
 log.debug("Get prices results:")
 log.debug(res)
+```
 
+output:
 
 ```
+                                  price
+datetime                                 
+2022-05-11 16:04:43.566000+00:00  1.05379
+2022-05-11 16:04:43.816000+00:00  1.05382
+2022-05-11 16:04:44.066000+00:00  1.05383
+2022-05-11 16:04:44.317000+00:00  1.05379
+2022-05-11 16:04:44.567000+00:00  1.05380
+                                   ...
+2022-05-11 16:05:25.857000+00:00  1.05422
+2022-05-11 16:05:27.368000+00:00  1.05423
+2022-05-11 16:05:27.618000+00:00  1.05422
+2022-05-13 07:32:16.461000+00:00  1.04057
+2022-05-13 07:32:16.779000+00:00  1.04055
+[100 rows x 1 columns]
+```
+
+* Get from date to date:
+
+```python
+
+res = r.get_prices('EUR/USD', start='2022-05-01', end='2022-05-10')
+
+log.debug("Get prices results:")
+log.debug(res)
+```
+
+output (it's more than 4000 records, so it's **not fetching** all of them):
+
+```
+                                  price
+datetime                                 
+2022-05-04 22:37:47.472000+00:00  1.06115
+2022-05-04 22:37:52.084000+00:00  1.06115
+2022-05-04 22:37:52.333000+00:00  1.06115
+2022-05-04 22:37:56.513000+00:00  1.06116
+2022-05-04 22:37:56.763000+00:00  1.06119
+                                   ...
+2022-05-08 22:59:54.623000+00:00  1.05381
+2022-05-08 22:59:54.872000+00:00  1.05381
+2022-05-08 22:59:56.542000+00:00  1.05381
+2022-05-08 22:59:56.792000+00:00  1.05381
+2022-05-08 22:59:57.042000+00:00  1.05380
+[4000 rows x 1 columns]
+```
+
 ## License
 
 The MIT License (MIT). Please see [License File](LICENSE) for more information.

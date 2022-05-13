@@ -93,17 +93,18 @@ class RestClient:
             instrument_id = INSTRUMENTS_INFO[instrument]
         return instrument_id
 
-    def get_prices(self, instrument, count=None, start=None, end=None, price_type='MID'):
+    def get_prices(self, instrument, count=None, start=None, end=None, price_type='mid'):
         """
         :param instrument: instrument (e.g. EUR/USD)
         :param count: number of ticks to return
         :param start: start date/time (YYYY-MM-DDTHH:MM:SS)
         :param end: end date/time (YYYY-MM-DDTHH:MM:SS)
-        :param price_type: price type (e.g. BID, ASK, MID)
+        :param price_type: price type (e.g. bid, ask, mid)
         :return: pd.DataFrame with prices
         """
-        if price_type not in ['BID', 'ASK', 'MID']:
+        if price_type not in ['bid', 'ask', 'mid']:
             raise ForexException('Invalid price type')
+        price_type = price_type.upper()
         params = {
             'maxResults': None,
             'PriceTicks': None,
