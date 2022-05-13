@@ -1,5 +1,4 @@
 import re
-from datetime import datetime, timedelta
 from functools import partial
 from operator import itemgetter
 
@@ -11,8 +10,7 @@ from forexcom.utils import send_request
 INSTRUMENTS_INFO = {}
 
 
-class Rest:
-
+class RestClient:
     def __init__(self, username, password, app_key, http_proxy=None, https_proxy=None, rest_url=None):
         if rest_url is None:
             rest_url = 'https://ciapi.cityindex.com/tradingapi/'
@@ -22,20 +20,27 @@ class Rest:
         self._rest_url = rest_url
         self._session = None
         self._get = partial(
-            send_request, 'GET', self._rest_url, json_format=True, http_proxy=http_proxy, https_proxy=https_proxy,
+            send_request,
+            'GET',
+            self._rest_url,
+            json_format=True,
+            http_proxy=http_proxy,
+            https_proxy=https_proxy,
         )
         self._post = partial(
-            send_request, 'POST', self._rest_url, json_format=True, http_proxy=http_proxy, https_proxy=https_proxy,
+            send_request,
+            'POST',
+            self._rest_url,
+            json_format=True,
+            http_proxy=http_proxy,
+            https_proxy=https_proxy,
         )
         self._session_token = None
         self._trading_account_id = None
 
     @property
     def _default_headers(self):
-        return {
-            'UserName': self._username,
-            'Session': self._session_token
-        }
+        return {'UserName': self._username, 'Session': self._session_token}
 
     @property
     def trading_account_id(self):

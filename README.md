@@ -42,7 +42,29 @@ Before working with Forex.com’s API, you need to get your own **AppKey**. you 
 
 ## Usage
 
+```python
+import logging
+import sys
+from forexcom import RestClient
 
+logging.basicConfig(stream=sys.stdout, format='%(asctime)s %(levelname)-7s ' +
+                    '%(threadName)-15s %(message)s', level=logging.DEBUG)
+log = logging.getLogger()
+
+username = '<USERNAME>'
+password='<PASSWORD>'
+app_key = '<APP_KEY>'
+
+r = Rest(username=username, password=password, app_key=app_key)
+r.connect()
+
+res = r.get_prices('EUR/USD', count=100)
+
+log.debug("Get prices results:")
+log.debug(res)
+
+
+```
 ## License
 
 The MIT License (MIT). Please see [License File](LICENSE) for more information.
