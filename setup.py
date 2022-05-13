@@ -36,6 +36,8 @@ setup(
         'Topic :: Internet :: WWW/HTTP :: Dynamic Content',
     ],
     install_requires=[
+        'certifi',
+        'pandas',
     ],
     extras_require={
         'dev': [
