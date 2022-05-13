@@ -55,7 +55,7 @@ username = '<USERNAME>'
 password='<PASSWORD>'
 app_key = '<APP_KEY>'
 
-r = Rest(username=username, password=password, app_key=app_key)
+r = RestClient(username=username, password=password, app_key=app_key)
 r.connect()
 
 res = r.get_prices('EUR/USD', count=100)
