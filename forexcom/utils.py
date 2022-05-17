@@ -25,7 +25,15 @@ def encode_params(params):
 
 
 def send_request(
-    method, base_url, path, params=None, json_format=False, headers=None, http_proxy=None, https_proxy=None
+    method,
+    base_url,
+    path,
+    params=None,
+    json_format=False,
+    headers=None,
+    http_proxy=None,
+    https_proxy=None,
+    stream=False,
 ):
     """Open a network connection and performs HTTP with provided params."""
     if method not in ["GET", "POST"]:
@@ -67,11 +75,15 @@ def send_request(
         response = urlopen(**kwargs)
     except HTTPError as e:
         log.debug('The server couldn\'t fulfill the request. <%s>', e.code)
+        if stream:
+            return e
         res_body = e.read()
         return json.loads(res_body.decode("utf-8")) if json_format else res_body
     except URLError as e:
         log.debug("Request failed to reach a server <%s>", e.reason)
     else:
+        if stream:
+            return response
         res_body = response.read()
         return json.loads(res_body.decode("utf-8")) if json_format else res_body
     return {} if json_format else ''

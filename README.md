@@ -47,16 +47,93 @@ Initialize connection:
 ```python
 import logging
 import sys
-from forexcom import RestClient
+from forexcom import ForexComClient
 
 logging.basicConfig(stream=sys.stdout, format='%(asctime)s %(levelname)-7s ' +
-                    '%(threadName)-15s %(message)s', level=logging.DEBUG)
+                    '%(threadName)-15s %(message)s', level=logging.INFO) # You can change it to logging.DEBUG
+
 log = logging.getLogger()
 
 username = '<USERNAME>'
 password='<PASSWORD>'
 app_key = '<APP_KEY>'
 
+client = ForexComClient(username, password, app_key)
+client.connect()
+```
+
+### Connect to streamer
+
+#### Subscribe to symbol
+
+```python
+
+symbol = 'EUR/USD'
+symbol_2 = 'XAU/USD'
+
+def print_price(price):
+    print(price.symbol_name, price.bid, price.offer, price.low, price.high, price.price, sep=' | ')
+
+client.price_symbol_subscribe(symbol, print_price)
+client.price_symbol_subscribe(symbol_2, print_price)
+```
+
+* output:
+
+```
+XAU/USD | 1819.58 | 1820.22 | 1818.02 | 1836.16 | 1819.90
+XAU/USD | 1819.57 | 1820.23 | 1818.02 | 1836.16 | 1819.90
+XAU/USD | 1819.57 | 1820.22 | 1818.02 | 1836.16 | 1819.89
+XAU/USD | 1819.57 | 1820.23 | 1818.02 | 1836.16 | 1819.90
+XAU/USD | 1819.58 | 1820.19 | 1818.02 | 1836.16 | 1819.89
+EUR/USD | 1.05478 | 1.05483 | 1.04284 | 1.05556 | 1.05480
+EUR/USD | 1.05478 | 1.05484 | 1.04284 | 1.05556 | 1.05481
+EUR/USD | 1.05479 | 1.05484 | 1.04284 | 1.05556 | 1.05481
+EUR/USD | 1.05478 | 1.05484 | 1.04284 | 1.05556 | 1.05481
+XAU/USD | 1819.62 | 1820.20 | 1818.02 | 1836.16 | 1819.91
+XAU/USD | 1819.52 | 1820.17 | 1818.02 | 1836.16 | 1819.84
+EUR/USD | 1.05479 | 1.05484 | 1.04284 | 1.05556 | 1.05481
+XAU/USD | 1819.48 | 1820.16 | 1818.02 | 1836.16 | 1819.82
+EUR/USD | 1.05478 | 1.05484 | 1.04284 | 1.05556 | 1.05481
+XAU/USD | 1819.49 | 1820.17 | 1818.02 | 1836.16 | 1819.82
+XAU/USD | 1819.48 | 1820.16 | 1818.02 | 1836.16 | 1819.82
+XAU/USD | 1819.40 | 1820.13 | 1818.02 | 1836.16 | 1819.76
+XAU/USD | 1819.41 | 1820.13 | 1818.02 | 1836.16 | 1819.77
+EUR/USD | 1.05479 | 1.05484 | 1.04284 | 1.05556 | 1.05481
+EUR/USD | 1.05478 | 1.05484 | 1.04284 | 1.05556 | 1.05481
+EUR/USD | 1.05477 | 1.05485 | 1.04284 | 1.05556 | 1.05481
+EUR/USD | 1.05478 | 1.05485 | 1.04284 | 1.05556 | 1.05482
+EUR/USD | 1.05476 | 1.05483 | 1.04284 | 1.05556 | 1.05480
+```
+
+#### Unsubscribe from symbol
+
+```python
+client.price_symbol_unsubscribe(symbol)
+client.price_symbol_unsubscribe(symbol_2)
+```
+
+#### Get Account info
+
+
+```python
+account_info = client.get_account_info()
+print(account_info)
+```
+
+* output: 
+```
+{'LogonUserName': 'Ali **', 'ClientAccountId': *****, 'CultureId': **, 'ClientAccountCurrency': 'EUR', 'AccountOperatorId': ******, 'TradingAccounts': [{'TradingAccountId': ****, 'TradingAccountCode': '****', 'TradingAccountStatus': 'Open', 'TradingAccountType': 'CFD'}], 'PersonalEmailAddress': '*****', 'HasMultipleEmailAddresses': ***, 'AccountHolders': [{'LegalPartyId': ****, 'Name': ' ****'}], 'ClientTypeId': **, 'LinkedClientAccounts': [], 'IsNfaEnabledClient': False, 'IsFifo': None, 'DaysUntilExpiryForDemo': *****, 'LegalPartyUniqueReference': ****, 'Is2FAEnabledAO': ****, 'Regulatory': {'IsMiFIDRegulator': True, 'IsPiisProvided': False, 'ClientAccountCreationDate': '/Date(*******)/'}, 'IsDMAClient': False, 'Contract': {'ContractId': ****, 'IsNIGO': False}, 'Restrictions': {'CloseOnly': False}}
+```
+
+#### Disconnect 
+```python
+client.disconnect()
+```
+
+## Use Rest API
+```python
+from forexcom import RestClient
 r = RestClient(username=username, password=password, app_key=app_key)
 r.connect()
 ```

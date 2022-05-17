@@ -1,3 +1,4 @@
+import logging
 import re
 from functools import partial
 from operator import itemgetter
@@ -7,7 +8,8 @@ import pandas as pd
 from forexcom.exceptions import ForexException
 from forexcom.utils import send_request
 
-INSTRUMENTS_INFO = {}
+log = logging.getLogger()
+SYMBOLS_INFO = {}
 
 
 class RestClient:
@@ -51,6 +53,7 @@ class RestClient:
         return self._session_token
 
     def connect(self):
+        log.debug('Connecting to REST API')
         data = {
             'UserName': self._username,
             'Password': self._password,
@@ -61,9 +64,8 @@ class RestClient:
             raise ForexException(res)
         self._session_token = res['Session']
 
-        return self._session_token is not None
-
     def get_account_info(self):
+        log.debug('Getting account info')
         res = self._get('/UserAccount/ClientAndTradingAccount', headers=self._default_headers)
         try:
             self._trading_account_id = res['TradingAccounts'][0]['TradingAccountId']
@@ -71,37 +73,58 @@ class RestClient:
         except Exception as e:
             raise ForexException(res) from e
 
-    def get_instrument_detail(self, instrument):
+    def get_symbol_detail(self, symbol):
         """
-        :param instrument: instrument (e.g. EUR/USD)
-        :return: instrument details
+        :param symbol: symbol (e.g. EUR/USD)
+        :return: symbol details
         """
-        res = self._get('/cfd/markets', params={'MarketName': instrument}, headers=self._default_headers)
+        log.debug('Getting symbol details for %s', symbol)
+        res = self._get('/cfd/markets', params={'MarketName': symbol}, headers=self._default_headers)
 
         try:
-            global INSTRUMENTS_INFO
-            INSTRUMENTS_INFO[instrument] = res['Markets'][0]['MarketId']
+            global SYMBOLS_INFO
+            SYMBOLS_INFO[symbol] = res['Markets'][0]['MarketId']
             return res
         except Exception as e:
             raise ForexException(res) from e
 
-    def get_instrument_id(self, instrument):
-        global INSTRUMENTS_INFO
-        instrument_id = INSTRUMENTS_INFO.get(instrument, None)
-        if not instrument_id:
-            self.get_instrument_detail(instrument)
-            instrument_id = INSTRUMENTS_INFO[instrument]
-        return instrument_id
+    def get_symbol_id(self, symbol):
+        log.debug('Getting symbol id for %s', symbol)
+        global SYMBOLS_INFO
+        symbol_id = SYMBOLS_INFO.get(symbol, None)
+        if not symbol_id:
+            self.get_symbol_detail(symbol)
+            symbol_id = SYMBOLS_INFO[symbol]
+        return symbol_id
 
-    def get_prices(self, instrument, count=None, start=None, end=None, price_type='mid'):
+    def get_symbol_name(self, symbol_id):
+        log.debug('Getting symbol name for %s', symbol_id)
+        global SYMBOLS_INFO
+        try:
+            return list(SYMBOLS_INFO.keys())[list(SYMBOLS_INFO.values()).index(int(symbol_id))]
+        except ValueError:
+            log.debug('Symbol id %s not found', symbol_id)
+        log.debug('Getting symbol name for %s from server', symbol_id)
+        res = self._get(f'market/{symbol_id}/information', headers=self._default_headers)
+
+        try:
+            symbol = res['MarketInformation']['Name']
+            SYMBOLS_INFO[symbol] = res['MarketInformation']['MarketId']
+            log.debug('Symbol %s found', symbol)
+            return symbol
+        except Exception as e:
+            raise ForexException(res) from e
+
+    def get_prices(self, symbol, count=None, start=None, end=None, price_type='mid'):
         """
-        :param instrument: instrument (e.g. EUR/USD)
+        :param symbol: symbol (e.g. EUR/USD)
         :param count: number of ticks to return
         :param start: start date/time (YYYY-MM-DDTHH:MM:SS)
         :param end: end date/time (YYYY-MM-DDTHH:MM:SS)
         :param price_type: price type (e.g. bid, ask, mid)
         :return: pd.DataFrame with prices
         """
+        log.debug('Getting prices for %s', symbol)
         if price_type not in ['bid', 'ask', 'mid']:
             raise ForexException('Invalid price type')
         price_type = price_type.upper()
@@ -120,9 +143,9 @@ class RestClient:
             end_datetime = pd.to_datetime(end)
             params['toTimestampUTC'] = int(end_datetime.timestamp())
 
-        instrument_id = self.get_instrument_id(instrument)
+        symbol_id = self.get_symbol_id(symbol)
 
-        url = f'/market/{instrument_id}/'
+        url = f'/market/{symbol_id}/'
         if start and end:
             url += 'tickhistorybetween'
         else:

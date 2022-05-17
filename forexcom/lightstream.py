@@ -103,12 +103,14 @@ class StreamerSubscription(object):
 class StreamerClient(object):
     """Manages the communication with Lightstreamer Server"""
 
-    def __init__(self, base_url, adapter_set="", user="", password=""):
+    def __init__(self, base_url=None, adapter_set=""):
+        if not base_url:
+            base_url = 'https://push.cityindex.com/'
         self._base_url = base_url
-        self._call = partial(send_request, 'POST')
+        self._call = partial(send_request, 'POST', stream=True)
         self._adapter_set = adapter_set
-        self._user = user
-        self._password = password
+        self._username = None
+        self._password = None
         self._session = {}
         self._subscriptions = {}
         self._current_subscription_key = 0
@@ -139,11 +141,19 @@ class StreamerClient(object):
         """Read a single line of content of the Stream Connection."""
         return self._stream_connection.readline().decode("utf-8").rstrip()
 
+    def set_password(self, password):
+        log.debug("Set password to <%s>", f'{password[:3]}{"*"*(len(password)-6)}{password[-3:]}')
+        self._password = password
+
+    def set_username(self, username):
+        log.debug("Set username to <%s>", username)
+        self._username = username
+
     def connect(self):
         """Establish a connection to Lightstreamer Server to create a new
         session.
         """
-        log.debug("Opening a new session to <%s>", self._base_url.geturl())
+        log.debug("Opening a new session to <%s>", self._base_url)
         self._stream_connection = self._call(
             self._base_url,
             CONNECTION_URL_PATH,
@@ -151,11 +161,12 @@ class StreamerClient(object):
                 "LS_op2": 'create',
                 "LS_cid": 'mgQkwtwdysogQz2BJ4Ji kOj2Bg',
                 "LS_adapter_set": self._adapter_set,
-                "LS_user": self._user,
+                "LS_user": self._username,
                 "LS_password": self._password,
             },
         )
         stream_line = self._read_from_stream()
+        log.debug("Stream line is <%s>", stream_line)
         self._handle_stream(stream_line)
 
     def bind(self):
@@ -174,7 +185,7 @@ class StreamerClient(object):
 
     def _handle_stream(self, stream_line):
         if stream_line == OK_CMD:
-            log.info("Successfully connected to <%s>", self._base_url.geturl())
+            log.info("Successfully connected to <%s>", self._base_url)
             log.debug("Starting to handling real-time stream")
             # Parsing session inkion
             while 1 and (next_stream_line := self._read_from_stream()):
@@ -211,12 +222,12 @@ class StreamerClient(object):
         invocation.
         """
         if self._stream_connection is not None:
-            log.debug("Closing session to <%s>", self._base_url.geturl())
+            log.debug("Closing session to <%s>", self._base_url)
             _ = self._control({"LS_op": OP_DESTROY})
             # There is no need to explicitly close the connection, since it is
             # handled by thread completion.
             self._join()
-            log.info("Closed session to <%s>", self._base_url.geturl())
+            log.info("Closed session to <%s>", self._base_url)
         else:
             log.warning("No connection to Lightstreamer")
 
@@ -327,7 +338,7 @@ class StreamerClient(object):
                 self._forward_update_message(message)
 
         if not rebind:
-            log.debug("No rebind to <%s>, clearing internal session data", self._base_url.geturl())
+            log.debug("No rebind to <%s>, clearing internal session data", self._base_url)
             # Clear internal data structures for session
             # and subscriptions management.
             self._stream_connection = None
