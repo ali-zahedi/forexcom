@@ -18,7 +18,7 @@ This project is to help you use [Forex.com](https://forex.com) [docs gain capita
 * Use the following command to install using pip:
 
 ```bash
-pip install forex
+pip install forexcom
 ```
 
 **OR** 
@@ -38,10 +38,168 @@ For better understanding, please read the:
 
 ## API Access
 
-Before working with Forex.com’s API, you need to get your own **AppKey**. you must contact [Forex.com](forex.com) service team to connect their REST API with your standard account or email to [support.en@forex.com](mailto:support.en@forex.com). It's usually take 3 working days.
+Before working with Forex.com’s API, you need to get your own **AppKey**. you must contact [Forex.com](forexcom) service team to connect their REST API with your standard account or email to [support.en@forex.com](mailto:support.en@forex.com). It's usually take 3 working days.
 
 ## Usage
 
+Initialize connection: 
+
+```python
+import logging
+import sys
+from forexcom import ForexComClient
+
+logging.basicConfig(stream=sys.stdout, format='%(asctime)s %(levelname)-7s ' +
+                    '%(threadName)-15s %(message)s', level=logging.INFO) # You can change it to logging.DEBUG
+
+log = logging.getLogger()
+
+username = '<USERNAME>'
+password='<PASSWORD>'
+app_key = '<APP_KEY>'
+
+client = ForexComClient(username, password, app_key)
+client.connect()
+```
+
+### Connect to streamer
+
+#### Subscribe to symbol
+
+```python
+
+symbol = 'EUR/USD'
+symbol_2 = 'XAU/USD'
+
+def print_price(price):
+    print(price.symbol_name, price.bid, price.offer, price.low, price.high, price.price, sep=' | ')
+
+client.price_symbol_subscribe(symbol, print_price)
+client.price_symbol_subscribe(symbol_2, print_price)
+```
+
+* output:
+
+```
+XAU/USD | 1819.58 | 1820.22 | 1818.02 | 1836.16 | 1819.90
+XAU/USD | 1819.57 | 1820.23 | 1818.02 | 1836.16 | 1819.90
+XAU/USD | 1819.57 | 1820.22 | 1818.02 | 1836.16 | 1819.89
+XAU/USD | 1819.57 | 1820.23 | 1818.02 | 1836.16 | 1819.90
+XAU/USD | 1819.58 | 1820.19 | 1818.02 | 1836.16 | 1819.89
+EUR/USD | 1.05478 | 1.05483 | 1.04284 | 1.05556 | 1.05480
+EUR/USD | 1.05478 | 1.05484 | 1.04284 | 1.05556 | 1.05481
+EUR/USD | 1.05479 | 1.05484 | 1.04284 | 1.05556 | 1.05481
+EUR/USD | 1.05478 | 1.05484 | 1.04284 | 1.05556 | 1.05481
+XAU/USD | 1819.62 | 1820.20 | 1818.02 | 1836.16 | 1819.91
+XAU/USD | 1819.52 | 1820.17 | 1818.02 | 1836.16 | 1819.84
+EUR/USD | 1.05479 | 1.05484 | 1.04284 | 1.05556 | 1.05481
+XAU/USD | 1819.48 | 1820.16 | 1818.02 | 1836.16 | 1819.82
+EUR/USD | 1.05478 | 1.05484 | 1.04284 | 1.05556 | 1.05481
+XAU/USD | 1819.49 | 1820.17 | 1818.02 | 1836.16 | 1819.82
+XAU/USD | 1819.48 | 1820.16 | 1818.02 | 1836.16 | 1819.82
+XAU/USD | 1819.40 | 1820.13 | 1818.02 | 1836.16 | 1819.76
+XAU/USD | 1819.41 | 1820.13 | 1818.02 | 1836.16 | 1819.77
+EUR/USD | 1.05479 | 1.05484 | 1.04284 | 1.05556 | 1.05481
+EUR/USD | 1.05478 | 1.05484 | 1.04284 | 1.05556 | 1.05481
+EUR/USD | 1.05477 | 1.05485 | 1.04284 | 1.05556 | 1.05481
+EUR/USD | 1.05478 | 1.05485 | 1.04284 | 1.05556 | 1.05482
+EUR/USD | 1.05476 | 1.05483 | 1.04284 | 1.05556 | 1.05480
+```
+
+#### Unsubscribe from symbol
+
+```python
+client.price_symbol_unsubscribe(symbol)
+client.price_symbol_unsubscribe(symbol_2)
+```
+
+#### Get Account info
+
+
+```python
+account_info = client.get_account_info()
+print(account_info)
+```
+
+* output: 
+```
+{'LogonUserName': 'Ali **', 'ClientAccountId': *****, 'CultureId': **, 'ClientAccountCurrency': 'EUR', 'AccountOperatorId': ******, 'TradingAccounts': [{'TradingAccountId': ****, 'TradingAccountCode': '****', 'TradingAccountStatus': 'Open', 'TradingAccountType': 'CFD'}], 'PersonalEmailAddress': '*****', 'HasMultipleEmailAddresses': ***, 'AccountHolders': [{'LegalPartyId': ****, 'Name': ' ****'}], 'ClientTypeId': **, 'LinkedClientAccounts': [], 'IsNfaEnabledClient': False, 'IsFifo': None, 'DaysUntilExpiryForDemo': *****, 'LegalPartyUniqueReference': ****, 'Is2FAEnabledAO': ****, 'Regulatory': {'IsMiFIDRegulator': True, 'IsPiisProvided': False, 'ClientAccountCreationDate': '/Date(*******)/'}, 'IsDMAClient': False, 'Contract': {'ContractId': ****, 'IsNIGO': False}, 'Restrictions': {'CloseOnly': False}}
+```
+
+#### Disconnect 
+```python
+client.disconnect()
+```
+
+## Use Rest API
+```python
+from forexcom import RestClient
+r = RestClient(username=username, password=password, app_key=app_key)
+r.connect()
+```
+
+### Get prices:
+
+Maximum number of items: **4000**
+
+
+* Get 100 most recent trades:
+
+```python
+
+res = r.get_prices('EUR/USD', count=100, price_type='mid') # price_type = [ask, bid, mid]
+
+log.debug("Get prices results:")
+log.debug(res)
+```
+
+output:
+
+```
+                                  price
+datetime                                 
+2022-05-11 16:04:43.566000+00:00  1.05379
+2022-05-11 16:04:43.816000+00:00  1.05382
+2022-05-11 16:04:44.066000+00:00  1.05383
+2022-05-11 16:04:44.317000+00:00  1.05379
+2022-05-11 16:04:44.567000+00:00  1.05380
+                                   ...
+2022-05-11 16:05:25.857000+00:00  1.05422
+2022-05-11 16:05:27.368000+00:00  1.05423
+2022-05-11 16:05:27.618000+00:00  1.05422
+2022-05-13 07:32:16.461000+00:00  1.04057
+2022-05-13 07:32:16.779000+00:00  1.04055
+[100 rows x 1 columns]
+```
+
+* Get from date to date:
+
+```python
+
+res = r.get_prices('EUR/USD', start='2022-05-01', end='2022-05-10')
+
+log.debug("Get prices results:")
+log.debug(res)
+```
+
+output (it's more than 4000 records, so it's **not fetching** all of them):
+
+```
+                                  price
+datetime                                 
+2022-05-04 22:37:47.472000+00:00  1.06115
+2022-05-04 22:37:52.084000+00:00  1.06115
+2022-05-04 22:37:52.333000+00:00  1.06115
+2022-05-04 22:37:56.513000+00:00  1.06116
+2022-05-04 22:37:56.763000+00:00  1.06119
+                                   ...
+2022-05-08 22:59:54.623000+00:00  1.05381
+2022-05-08 22:59:54.872000+00:00  1.05381
+2022-05-08 22:59:56.542000+00:00  1.05381
+2022-05-08 22:59:56.792000+00:00  1.05381
+2022-05-08 22:59:57.042000+00:00  1.05380
+[4000 rows x 1 columns]
+```
 
 ## License
 
