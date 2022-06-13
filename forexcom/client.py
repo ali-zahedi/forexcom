@@ -4,7 +4,7 @@ import re
 import pandas as pd
 
 from .lightstream import StreamerClient, StreamerSubscription
-from .models.prices import Price
+from .models import Order, OrderStatus, OrderType, Position, PositionMethod, Price
 from .rest import RestClient
 
 log = logging.getLogger()
@@ -123,3 +123,97 @@ class ForexComClient:
         )
         log.debug("Price update: %s", price)
         callback(price)
+
+    def orders_subscribe(self, callback):
+        if not self._streamer.is_connect:
+            log.debug("Streamer not connected.")
+            return False
+        channel = 'ORDERS'
+        if channel in self._subscriber:
+            log.debug("Already subscribed to %s", channel)
+            return True
+
+        # Making a new Subscription in MERGE mode
+        subscription = StreamerSubscription(
+            mode="MERGE",
+            items=[channel],
+            fields=[
+                "OrderId",
+                "MarketId",
+                "ClientAccountId",
+                "TradingAccountId",
+                "CurrencyId",
+                "CurrencyISO",
+                "Direction",
+                "AutoRollover",
+                "ExecutionPrice",
+                "LastChangedTime",
+                "OpenPrice",
+                "OriginalLastChangedDateTime",
+                "OriginalQuantity",
+                "PositionMethodId",
+                "Quantity",
+                "Type",
+                "Status",
+                "ReasonId",
+            ],
+            adapter="ORDERS",
+        )
+        subscription.addlistener(self.on_orders_update)
+        # Registering the Subscription
+        sub_key = self._streamer.subscribe(subscription)
+        self._subscriber[channel] = (sub_key, callback)
+        return True
+
+    def orders_unsubscribe(self):
+        raise NotImplementedError
+
+    def on_orders_update(self, data):
+        log.debug("On orders update: %s", data)
+        data = data["values"]
+        pattern = re.compile(r'Date\(([\d]+)\)')
+        ts = pattern.search(data['LastChangedTime'])[1].strip()
+        last_changed_time = pd.to_datetime(ts, unit='ms').tz_localize('UTC')
+        ts = pattern.search(data['OriginalLastChangedDateTime'])[1].strip()
+        original_last_changed_date_time = pd.to_datetime(ts, unit='ms').tz_localize('UTC')
+
+        symbol_id = data['MarketId']
+        symbol_name = self._rest.get_symbol_name(symbol_id)
+        callback = self._subscriber["ORDERS"][1]
+        order_id = int(data['OrderId'])
+        client_account_id = int(data['ClientAccountId'])
+        trading_account_id = int(data['TradingAccountId'])
+        currency = data['CurrencyId']
+        position = Position(int(data['Direction']))
+        auto_rollover = bool(data['AutoRollover'])
+        execution_price = data['ExecutionPrice']
+        open_price = float(data['OpenPrice'])
+        original_quantity = float(data['OriginalQuantity'])
+        position_method_id = PositionMethod(int(data['PositionMethodId']))
+        quantity = float(data['Quantity'])
+        order_type = OrderType(data['Type'])
+        status = OrderStatus(data['Status'])
+        reason_id = data['ReasonId']
+
+        order = Order(
+            order_id=order_id,
+            symbol_id=symbol_id,
+            symbol_name=symbol_name,
+            client_account_id=client_account_id,
+            trading_account_id=trading_account_id,
+            currency=currency,
+            position=position,
+            auto_rollover=auto_rollover,
+            execution_price=execution_price,
+            open_price=open_price,
+            last_changed_time=last_changed_time,
+            original_last_changed_date_time=original_last_changed_date_time,
+            original_quantity=original_quantity,
+            position_method=position_method_id,
+            quantity=quantity,
+            order_type=order_type,
+            status=status,
+            reason_id=reason_id,
+        )
+        log.debug("Orders update: %s", order)
+        callback(order)
