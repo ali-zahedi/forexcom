@@ -30,8 +30,8 @@ class ForexComClient:
         self._streamer.connect()
 
     def disconnect(self):
-        for sub_key, symbol in self._subscriber:
-            self._streamer.unsubscribe(self._subscriber[sub_key])
+        for sub_key in self._subscriber.keys():
+            self._streamer.unsubscribe(self._subscriber[sub_key][0])
         self._streamer.disconnect()
 
     def get_account_info(self):
