@@ -3,8 +3,9 @@ import re
 
 import pandas as pd
 
-from forexcom import RestClient, StreamerClient, StreamerSubscription
-from forexcom.models.prices import Price
+from .lightstream import StreamerClient, StreamerSubscription
+from .models.prices import Price
+from .rest import RestClient
 
 log = logging.getLogger()
 
