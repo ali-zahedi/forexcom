@@ -2,12 +2,6 @@ from .enums import OrderStatus, OrderType, Position, PositionMethod
 
 
 class Order:
-    """
-    position: of the order (1 == buy, 0 == sell).
-    position_method_id: Indicates the position of the trade. 1 == LongOrShortOnly, 2 == LongAndShort.
-    order_type: The type of the order (1 = Trade / 2 = Stop / 3 = Limit).
-    """
-
     def __init__(
         self,
         order_id,
