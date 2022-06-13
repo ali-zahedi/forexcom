@@ -52,6 +52,10 @@ class RestClient:
     def session_token(self):
         return self._session_token
 
+    @property
+    def is_connect(self):
+        return bool(self._session_token)
+
     def connect(self):
         log.debug('Connecting to REST API')
         data = {

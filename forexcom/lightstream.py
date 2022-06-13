@@ -169,6 +169,10 @@ class StreamerClient(object):
         log.debug("Stream line is <%s>", stream_line)
         self._handle_stream(stream_line)
 
+    @property
+    def is_connect(self):
+        return bool(self._session.get('SessionId'))
+
     def bind(self):
         """Replace a completely consumed connection in listening for an active
         Session.

@@ -24,23 +24,36 @@ class ForexComClient:
         self._subscriber = {}
 
     def connect(self):
-        self._rest.connect()
+        if self._rest.is_connect:
+            log.debug("Rest connected before.")
+        else:
+            self._rest.connect()
+
         self._streamer.set_username(self._username)
         self._streamer.set_password(self._rest.session_token)
-        self._streamer.connect()
+
+        if self._streamer.is_connect:
+            log.debug("Streamer connected before.")
+        else:
+            self._streamer.connect()
 
     def disconnect(self):
         for sub_key in self._subscriber.keys():
             self._streamer.unsubscribe(self._subscriber[sub_key][0])
+        self._subscriber = {}
         self._streamer.disconnect()
 
     def get_account_info(self):
         return self._rest.get_account_info()
 
     def price_symbol_subscribe(self, symbol, callback):
+        if not self._streamer.is_connect:
+            log.debug("Streamer not connected.")
+            return False
+
         if symbol in self._subscriber:
             log.debug("Already subscribed to %s", symbol)
-            return
+            return True
 
         symbol_id = self._rest.get_symbol_id(symbol)
 
@@ -67,12 +80,14 @@ class ForexComClient:
         # Registering the Subscription
         sub_key = self._streamer.subscribe(subscription)
         self._subscriber[symbol] = (sub_key, callback)
+        return True
 
     def price_symbol_unsubscribe(self, symbol):
         if symbol in self._subscriber:
             self._streamer.unsubscribe(self._subscriber[symbol][0])
             del self._subscriber[symbol]
         log.debug("Unsubscribed from %s", symbol)
+        return True
 
     def on_price_update(self, data):
         log.debug("On price update: %s", data)
