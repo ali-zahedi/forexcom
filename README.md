@@ -113,6 +113,24 @@ client.price_symbol_unsubscribe(symbol)
 client.price_symbol_unsubscribe(symbol_2)
 ```
 
+### Subscribe orders
+
+```python
+def print_order(order):
+    print(order)
+
+client.orders_subscribe(print_order)
+```
+
+* output:
+
+```
+2022-06-13 16:57:43+00:00 | 839396383 | XAU/USD | Position.Buy | PositionMethod.LongOrShortOnly | OrderType.Trade | OrderStatus.Open | 1 | 1828.36 | CityIndex.Atlas.Business.OrderExecutionPrice | 4.0 | 4.0
+2022-06-13 16:58:02+00:00 | 839396439 | XAU/USD | Position.Sell | PositionMethod.LongOrShortOnly | OrderType.Limit | OrderStatus.Accepted | 1 | 0.0 | CityIndex.Atlas.Business.OrderExecutionPrice | 4.0 | 4.0
+2022-06-13 16:57:43+00:00 | 839396383 | XAU/USD | Position.Buy | PositionMethod.LongOrShortOnly | OrderType.Trade | OrderStatus.Open | 1 | 1828.36 | CityIndex.Atlas.Business.OrderExecutionPrice | 4.0 | 4.0
+2022-06-13 16:58:05+00:00 | 839396448 | XAU/USD | Position.Sell | PositionMethod.LongOrShortOnly | OrderType.Trade | OrderStatus.Closed | 1 | 1829.15 | CityIndex.Atlas.Business.OrderExecutionPrice | 4.0 | 0.0
+2022-06-13 16:58:05+00:00 | 839396439 | XAU/USD | Position.Sell | PositionMethod.LongOrShortOnly | OrderType.Limit | OrderStatus.Cancelled | 100 | 0.0 | CityIndex.Atlas.Business.OrderExecutionPrice | 4.0 | 0.0
+```
 #### Get Account info
 
 

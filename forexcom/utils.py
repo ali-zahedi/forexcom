@@ -24,6 +24,13 @@ def encode_params(params):
     return _url_encode(dict([(k, v) for (k, v) in _iteritems(params) if v]))
 
 
+def _parse_json(data):
+    if data:
+        return json.loads(data.decode("utf-8"))
+    else:
+        return {}
+
+
 def send_request(
     method,
     base_url,
@@ -78,12 +85,12 @@ def send_request(
         if stream:
             return e
         res_body = e.read()
-        return json.loads(res_body.decode("utf-8")) if json_format else res_body
+        return _parse_json(res_body) if json_format else res_body
     except URLError as e:
         log.debug("Request failed to reach a server <%s>", e.reason)
     else:
         if stream:
             return response
         res_body = response.read()
-        return json.loads(res_body.decode("utf-8")) if json_format else res_body
+        return _parse_json(res_body) if json_format else res_body
     return {} if json_format else ''

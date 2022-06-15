@@ -4,7 +4,15 @@ import re
 import pandas as pd
 
 from .lightstream import StreamerClient, StreamerSubscription
-from .models import Order, OrderStatus, OrderType, Position, PositionMethod, Price
+from .models import (
+    Currency,
+    Order,
+    OrderStatus,
+    OrderType,
+    Position,
+    PositionMethod,
+    Price,
+)
 from .rest import RestClient
 
 log = logging.getLogger()
@@ -166,7 +174,12 @@ class ForexComClient:
         return True
 
     def orders_unsubscribe(self):
-        raise NotImplementedError
+        channel = 'ORDERS'
+        if channel in self._subscriber:
+            self._streamer.unsubscribe(self._subscriber[channel][0])
+            del self._subscriber[channel]
+        log.debug("Unsubscribed from %s", channel)
+        return True
 
     def on_orders_update(self, data):
         log.debug("On orders update: %s", data)
@@ -183,17 +196,16 @@ class ForexComClient:
         order_id = int(data['OrderId'])
         client_account_id = int(data['ClientAccountId'])
         trading_account_id = int(data['TradingAccountId'])
-        currency = data['CurrencyId']
-        position = Position(int(data['Direction']))
+        currency = Currency(int(data['CurrencyId']))
+        position = Position(int(data['Direction']) + 1)
         auto_rollover = bool(data['AutoRollover'])
-        execution_price = data['ExecutionPrice']
         open_price = float(data['OpenPrice'])
         original_quantity = float(data['OriginalQuantity'])
         position_method_id = PositionMethod(int(data['PositionMethodId']))
         quantity = float(data['Quantity'])
-        order_type = OrderType(data['Type'])
-        status = OrderStatus(data['Status'])
-        reason_id = data['ReasonId']
+        order_type = OrderType.find_by_name(data['Type'])
+        status = OrderStatus.find_by_name(data['Status'])
+        reason_id = int(data['ReasonId'])
 
         order = Order(
             order_id=order_id,
@@ -204,7 +216,6 @@ class ForexComClient:
             currency=currency,
             position=position,
             auto_rollover=auto_rollover,
-            execution_price=execution_price,
             open_price=open_price,
             last_changed_time=last_changed_time,
             original_last_changed_date_time=original_last_changed_date_time,

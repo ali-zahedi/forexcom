@@ -4,24 +4,23 @@ from .enums import OrderStatus, OrderType, Position, PositionMethod
 class Order:
     def __init__(
         self,
-        order_id,
-        symbol_id,
-        symbol_name,
-        client_account_id,
-        trading_account_id,
+        order_id: int,
+        symbol_id: int,
+        symbol_name: str,
+        client_account_id: int,
+        trading_account_id: int,
         currency,
         position: Position,
-        auto_rollover,
-        execution_price,
-        open_price,
-        last_changed_time,
-        original_last_changed_date_time,
-        original_quantity,
-        position_method: PositionMethod,
-        quantity,
+        open_price: float,
+        original_quantity: float,
+        quantity: float,
         order_type: OrderType,
         status: OrderStatus,
         reason_id,
+        position_method: PositionMethod = PositionMethod.LongOrShortOnly,
+        original_last_changed_date_time=None,
+        last_changed_time=None,
+        auto_rollover: bool = False,
     ):
         self.order_id = order_id
         self.symbol_id = symbol_id
@@ -31,7 +30,6 @@ class Order:
         self.currency = currency
         self.position = position
         self.auto_rollover = auto_rollover
-        self.execution_price = execution_price
         self.last_changed_time = last_changed_time
         self.open_price = open_price
         self.original_last_changed_date_time = original_last_changed_date_time
@@ -46,5 +44,5 @@ class Order:
         return (
             f"{self.last_changed_time} | {self.order_id} | {self.symbol_name} | {self.position} |"
             f" {self.position_method} | {self.order_type} | {self.status} | {self.reason_id} |"
-            f" {self.open_price} | {self.execution_price} | {self.original_quantity} | {self.quantity}"
+            f" {self.open_price} | {self.original_quantity} | {self.quantity}"
         )
