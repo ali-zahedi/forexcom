@@ -10,3 +10,4 @@ from .enums import (  # noqa
 )
 from .orders import Order  # noqa
 from .prices import Price  # noqa
+from .subscribers import Subscriber  # noqa

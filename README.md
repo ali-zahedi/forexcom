@@ -74,8 +74,8 @@ symbol_2 = 'XAU/USD'
 def print_price(price):
     print(price.symbol_name, price.bid, price.offer, price.low, price.high, price.price, sep=' | ')
 
-client.price_symbol_subscribe(symbol, print_price)
-client.price_symbol_subscribe(symbol_2, print_price)
+index_symbol_sub = client.price_symbol_subscribe(symbol, print_price)
+index_symbol_2_sub = client.price_symbol_subscribe(symbol_2, print_price)
 ```
 
 * output:
@@ -109,8 +109,13 @@ EUR/USD | 1.05476 | 1.05483 | 1.04284 | 1.05556 | 1.05480
 #### Unsubscribe from symbol
 
 ```python
-client.price_symbol_unsubscribe(symbol)
-client.price_symbol_unsubscribe(symbol_2)
+client.unsubscribe_listener(index_symbol_sub)
+client.unsubscribe_listener(index_symbol_2_sub)
+
+# OR it's effect all subscribers
+client.unsubscribe(symbol)
+client.unsubscribe(symbol_2)
+
 ```
 
 ### Subscribe orders
@@ -119,7 +124,7 @@ client.price_symbol_unsubscribe(symbol_2)
 def print_order(order):
     print(order)
 
-client.orders_subscribe(print_order)
+index_order_sub = client.orders_subscribe(print_order)
 ```
 
 * output:
@@ -131,7 +136,15 @@ client.orders_subscribe(print_order)
 2022-06-13 16:58:05+00:00 | 839396448 | XAU/USD | Position.Sell | PositionMethod.LongOrShortOnly | OrderType.Trade | OrderStatus.Closed | 1 | 1829.15 | CityIndex.Atlas.Business.OrderExecutionPrice | 4.0 | 0.0
 2022-06-13 16:58:05+00:00 | 839396439 | XAU/USD | Position.Sell | PositionMethod.LongOrShortOnly | OrderType.Limit | OrderStatus.Cancelled | 100 | 0.0 | CityIndex.Atlas.Business.OrderExecutionPrice | 4.0 | 0.0
 ```
-#### Get Account info
+
+### Unsubscribe
+```python
+client.unsubscribe_listener(index_order_sub)
+# OR completely unsubscribe. it's effect all subscribers
+client.orders_unsubscribe()
+```
+
+### Get Account info
 
 
 ```python
@@ -144,7 +157,25 @@ print(account_info)
 {'LogonUserName': 'Ali **', 'ClientAccountId': *****, 'CultureId': **, 'ClientAccountCurrency': 'EUR', 'AccountOperatorId': ******, 'TradingAccounts': [{'TradingAccountId': ****, 'TradingAccountCode': '****', 'TradingAccountStatus': 'Open', 'TradingAccountType': 'CFD'}], 'PersonalEmailAddress': '*****', 'HasMultipleEmailAddresses': ***, 'AccountHolders': [{'LegalPartyId': ****, 'Name': ' ****'}], 'ClientTypeId': **, 'LinkedClientAccounts': [], 'IsNfaEnabledClient': False, 'IsFifo': None, 'DaysUntilExpiryForDemo': *****, 'LegalPartyUniqueReference': ****, 'Is2FAEnabledAO': ****, 'Regulatory': {'IsMiFIDRegulator': True, 'IsPiisProvided': False, 'ClientAccountCreationDate': '/Date(*******)/'}, 'IsDMAClient': False, 'Contract': {'ContractId': ****, 'IsNIGO': False}, 'Restrictions': {'CloseOnly': False}}
 ```
 
-#### Disconnect 
+### Trade
+
+```python
+from forexcom import Position
+symbol = "EUR/USD"
+position = Position.Buy
+offer_price = 1.055
+quantity = 1000
+order = client.order_market_price(symbol, position, quantity, offer_price)
+print(order)
+```
+
+* output:
+
+```python
+None | 839931205 | EUR/USD | Position.Buy | PositionMethod.LongOrShortOnly | OrderType.Trade | OrderStatus.Open | 1 | 1.03917 | 1000.0 | 1000.0
+```
+
+### Disconnect 
 ```python
 client.disconnect()
 ```

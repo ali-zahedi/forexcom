@@ -198,7 +198,7 @@ class RestClient:
         except Exception as e:
             raise ForexException(res) from e
 
-    def create_trade(
+    def order_market_price(
         self,
         client_account_id: int,
         trading_account_id,
