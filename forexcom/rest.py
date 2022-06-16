@@ -8,6 +8,8 @@ import pandas as pd
 from forexcom.exceptions import ForexException
 from forexcom.utils import send_request
 
+from .models import Currency, InstructionStatus, Order, OrderStatus, OrderType, Position
+
 log = logging.getLogger()
 SYMBOLS_INFO = {}
 
@@ -52,6 +54,10 @@ class RestClient:
     def session_token(self):
         return self._session_token
 
+    @property
+    def is_connect(self):
+        return bool(self._session_token)
+
     def connect(self):
         log.debug('Connecting to REST API')
         data = {
@@ -60,7 +66,8 @@ class RestClient:
             'AppKey': self._app_key,
         }
         res = self._post('/session', params=data)
-        if res['StatusCode'] != 1:
+        status = InstructionStatus(int(res['StatusCode']))
+        if status != InstructionStatus.Accepted:
             raise ForexException(res)
         self._session_token = res['Session']
 
@@ -170,5 +177,77 @@ class RestClient:
             df.datetime = df.datetime.dt.tz_localize('UTC')
             df.set_index('datetime', inplace=True)
             return df
+        except Exception as e:
+            raise ForexException(res) from e
+
+    def cancel_order(self, trading_account_id, order_id):
+        """
+        It's use for only 'Pending' or 'Accepted' order status
+        """
+        log.debug('Cancel order %s-%s', trading_account_id, order_id)
+        res = self._post(
+            '/order/cancel',
+            params={'OrderId': order_id, 'TradingAccountId': trading_account_id},
+            headers=self._default_headers,
+        )
+        status = InstructionStatus(int(res['StatusCode']))
+        if status != InstructionStatus.Accepted:
+            raise ForexException(res)
+        try:
+            return res
+        except Exception as e:
+            raise ForexException(res) from e
+
+    def order_market_price(
+        self,
+        client_account_id: int,
+        trading_account_id,
+        symbol: str,
+        position: Position,
+        offer_price: float,
+        quantity: int,
+    ):
+        log.debug('create trade %s %s %s %s %s', trading_account_id, symbol, position, offer_price, quantity)
+        symbol_id = self.get_symbol_id(symbol)
+        res = self._post(
+            '/order/newtradeorder',
+            params={
+                'TradingAccountId': trading_account_id,
+                'MarketName': symbol,
+                'MarketId': symbol_id,
+                'Direction': position.name.lower(),
+                'Quantity': quantity,
+                'OfferPrice': offer_price,
+            },
+            headers=self._default_headers,
+        )
+        res['StatusCode'] = res['Status']
+        status = InstructionStatus(int(res['StatusCode']))
+        if status != InstructionStatus.Accepted:
+            raise ForexException(res)
+        try:
+            data = res['Orders'][0]
+            order_id = int(data['OrderId'])
+            currency = Currency.Unknown
+            open_price = float(data['Price'])
+            original_quantity = float(data['Quantity'])
+            order_type = OrderType(data['OrderTypeId'])
+            status = OrderStatus(int(data['Status']))
+            reason_id = int(data['StatusReason'])
+            return Order(
+                symbol_id=symbol_id,
+                symbol_name=symbol,
+                order_id=order_id,
+                client_account_id=client_account_id,
+                trading_account_id=trading_account_id,
+                currency=currency,
+                position=position,
+                open_price=open_price,
+                original_quantity=original_quantity,
+                quantity=original_quantity,
+                order_type=order_type,
+                status=status,
+                reason_id=reason_id,
+            )
         except Exception as e:
             raise ForexException(res) from e
